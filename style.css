@@ -10,6 +10,10 @@ canvas{display:block;width:100vw;height:100vh;background:#d8c9ac}
 
 .hidden{display:none !important}
 
+/* Mobile hint: shown briefly on first load to teach swipe + joystick */
+#mobileHint{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);pointer-events:none;z-index:70;
+  background:rgba(50,40,30,.65);color:#f6f0e2;padding:6px 14px;border-radius:16px;font-size:12px;opacity:0.85;animation:fadeHint 4s ease-out forwards}
+@keyframes fadeHint{0%{opacity:0;transform:translateX(-50%) translateY(10px)}12%{opacity:.9}80%{opacity:.9}100%{opacity:0}}
 /* ---------- paper card / buttons ---------- */
 .screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
   background:rgba(60,50,38,.45);backdrop-filter:blur(2px);z-index:40;padding:14px;overflow:auto}
@@ -68,10 +72,12 @@ h1,h2,h3{margin:.2em 0 .5em}
 .tdone{text-decoration:line-through;opacity:.5}
 
 #actions{position:absolute;right:12px;bottom:12px;display:grid;grid-template-columns:repeat(2,auto);gap:8px;pointer-events:auto}
-.act{width:78px;height:78px;border-radius:50%;border:3px solid var(--line);background:var(--paper2);
-  font-family:inherit;font-size:12px;box-shadow:3px 4px 0 rgba(50,40,30,.4);cursor:pointer;position:relative;overflow:hidden}
-.act:active{transform:translate(3px,4px);box-shadow:none}
-.act[disabled]{opacity:.35}
+.act{width:90px;height:90px;border-radius:50%;border:3.5px solid var(--line);background:var(--paper2);
+  font-family:inherit;font-size:14px;box-shadow:4px 5px 0 rgba(50,40,30,.4);cursor:pointer;position:relative;overflow:hidden
+  transition:transform .07s,border-color .1s}
+.act:hover{border-color:#e0554a}
+.act:active{transform:translate(4px,5px);box-shadow:none;border-color:#e0554a}
+.act[disabled]{opacity:.35;pointer-events:none}
 #btnKill{background:#f0a49a}
 #btnUse{background:#f7d9a0}
 #btnReport{background:#c9d6f0}
@@ -81,9 +87,14 @@ h1,h2,h3{margin:.2em 0 .5em}
 .act .cd{position:absolute;inset:0;background:rgba(40,35,28,.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px}
 @media(max-width:560px){.act{width:62px;height:62px;font-size:10px}}
 
-#stick{position:absolute;left:20px;bottom:20px;width:120px;height:120px;border-radius:50%;
-  border:3px dashed rgba(60,50,40,.5);background:rgba(246,240,226,.35);pointer-events:none;opacity:0;transition:opacity .15s}
-#stickNub{position:absolute;left:35px;top:35px;width:50px;height:50px;border-radius:50%;background:var(--paper);border:3px solid var(--line)}
+/* Joystick zone: bottom-left, thumb-safe, big hit area */
+#stickZone{position:absolute;left:0;bottom:0;width:46vw;height:48vh;z-index:49;
+  touch-action:none;pointer-events:auto;opacity:.4;animation:pulseZone 3s infinite alternate}
+@keyframes pulseZone{from{opacity:.18}to{opacity:.42}}
+#stick{position:absolute;left:24px;bottom:24px;width:140px;height:140px;border-radius:50%;
+  border:3px dashed rgba(60,50,40,.45);background:rgba(246,240,226,.55);pointer-events:none;opacity:0;transition:opacity .13s}
+#stickNub{position:absolute;left:45px;top:45px;width:50px;height:50px;border-radius:50%;background:var(--paper);border:3.5px solid var(--line);
+  box-shadow:2px 3px 0 rgba(60,50,40,.35);transition:transform .05s}
 #stick.on{opacity:1}
 
 #alertBanner{position:absolute;top:38%;left:50%;transform:translate(-50%,-50%) rotate(-2deg);

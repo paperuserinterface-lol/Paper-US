@@ -420,6 +420,10 @@ let stick={on:false,id:null,ox:0,oy:0,dx:0,dy:0};
 const stickEl=$("#stick"),nubEl=$("#stickNub");
 cv.addEventListener("pointerdown",e=>{
   if(S.phase==="play"&&S.inVent&&ventClick(e.clientX,e.clientY))return;
+  // joystick zone is the left 46vw, bottom half. If touch lands there, start joystick.
+  const inZone=e.clientX<W*0.46&&e.clientY>H*0.45;
+  if(inZone){stick.on=true;stick.id=e.pointerId;stick.ox=e.clientX;stick.oy=e.clientY;stick.dx=0;stick.dy=0;
+    stickEl.style.left=(e.clientX-70)+"px";stickEl.style.top=(e.clientY-70)+"px";stickEl.style.bottom="auto";stickEl.classList.add("on");haptic(8);return;}
   if(e.clientX>W*0.62)return;
   stick.on=true;stick.id=e.pointerId;stick.ox=e.clientX;stick.oy=e.clientY;
   stickEl.style.left=(e.clientX-60)+"px";stickEl.style.top=(e.clientY-60)+"px";
@@ -874,7 +878,7 @@ function route(from,to){
 
 /* ====================== 7. ACTIONS / TASKS / UI ===================== */
 let panelOpen=false;
-function toast(msg){const d=document.createElement("div");d.className="toast-item";d.textContent=msg;
+function toast(msg){haptic();const d=document.createElement("div");d.className="toast-item";d.textContent=msg;
   $("#toast").appendChild(d);setTimeout(()=>d.remove(),2600);}
 function banner(msg,ms){const b=$("#alertBanner");b.textContent=msg;b.classList.remove("hidden");
   clearTimeout(b._t);b._t=setTimeout(()=>b.classList.add("hidden"),ms||1800);}
@@ -951,6 +955,7 @@ function updateActionButtons(){
 }
 
 function doAction(a){
+  haptic();
   if(S.phase!=="play"||S.paused||panelOpen)return;
   const c=context(),me=S.me;
   if(a==="use"){
@@ -1067,7 +1072,7 @@ function reportBody(body,reporter){
 }
 
 /* ---------------------------- minigames ---------------------------- */
-function openPanel(title,html,onClose){
+function openPanel(title,html,onClose){haptic();
   panelOpen=true;$("#panelTitle").textContent=title;$("#panelBody").innerHTML=html;
   $("#panel").classList.remove("hidden");
   $("#panelClose").onclick=()=>{closePanel();if(onClose)onClose();};
@@ -2107,5 +2112,38 @@ $("#btnQuit").onclick=()=>{S.paused=false;S.phase="menu";hideAll();$("#hud").cla
 $("#btnAgain").onclick=()=>setupGame();
 $("#btnLobby").onclick=()=>{S.phase="menu";hideAll();$("#hud").classList.add("hidden");
   $("#lobby").classList.remove("hidden");syncLobby();};
+/* ---- haptic feedback helper ---- */
+function haptic(v){if(window.navigator&&navigator.vibrate)navigator.vibrate(v||12);}
+
+/* ---- swipe / flick zone for quick actions (right-side of screen) ---- */
+const swipeZone=document.createElement("div");
+swipeZone.id="swipeZone";swipeZone.style.cssText="position:fixed;right:0;top:0;width:28vw;height:55vh;z-index:45;touch-action:manipulation;pointer-events:none;";
+document.body.appendChild(swipeZone);
+
+let swipeT=null,swipeX=0,swipeY=0,swipeStart=0;
+swipeZone.addEventListener("pointerdown",e=>{
+  if(e.pointerType==="mouse"&&e.button!==0)return;
+  if(e.clientX<W*0.7)return; // only trigger on right edge (near buttons area)
+  swipeT=e.pointerId;swipeX=e.clientX;swipeY=e.clientY;swipeStart=Date.now();
+  swipeZone.style.pointerEvents="auto";
+});
+addEventListener("pointermove",e=>{
+  if(swipeT===null||e.pointerId!==swipeT)return;
+  const dx=e.clientX-swipeX,dy=e.clientY-swipeY,d=Math.hypot(dx,dy);
+  if(d>55&&Date.now()-swipeStart>150){
+    if(Math.abs(dx)>Math.abs(dy)){if(dx>0)doAction("use");else doAction("kill");}
+    else{if(dy>0)doAction("vent");else doAction("report");}
+    swipeT=null;swipeZone.style.pointerEvents="none";
+    haptic(18);
+  }
+});
+addEventListener("pointerup",e=>{
+  if(e.pointerId===swipeT){swipeT=null;swipeZone.style.pointerEvents="none";}
+});
+
 $("#panelClose").onclick=closePanel;
 syncLobby();
+
+// mobile: detect orientation change, resize game, and add haptic to actions
+addEventListener("resize",()=>{if(S.phase==="play"){resize();updateHUD();}});
+addEventListener("orientationchange",()=>{setTimeout(()=>{resize();if(S.phase==="play")updateHUD();},300);});
