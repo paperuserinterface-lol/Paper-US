@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Paper Among Us — Funsion</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<!-- ============ HUD ============ -->
+<div id="hud" class="hidden">
+  <div id="topbar">
+    <div class="paper-chip" id="roleChip">Crewmate</div>
+    <div class="paper-chip" id="taskChip">Tasks 0/0</div>
+    <div class="paper-chip" id="scoreChip">Score 0</div>
+    <button class="paper-btn tiny" id="pauseBtn">II</button>
+  </div>
+
+  <div id="taskbar"><div id="taskbarFill"></div><span id="taskbarLbl">CREW TASKS</span></div>
+
+  <div id="tasklist"></div>
+
+  <div id="alertBanner" class="hidden"></div>
+  <div id="toast"></div>
+
+  <!-- touch joystick -->
+  <div id="stick"><div id="stickNub"></div></div>
+
+  <div id="actions">
+    <button class="act" id="btnAbility" data-a="ability"><span>ABILITY</span></button>
+    <button class="act" id="btnSabotage" data-a="sabotage"><span>SABO</span></button>
+    <button class="act" id="btnVent" data-a="vent"><span>VENT</span></button>
+    <button class="act" id="btnKill" data-a="kill"><span>KILL</span></button>
+    <button class="act" id="btnReport" data-a="report"><span>REPORT</span></button>
+    <button class="act" id="btnUse" data-a="use"><span>USE</span></button>
+  </div>
+</div>
+
+<!-- ============ MAIN MENU ============ -->
+<div id="menu" class="screen">
+  <div class="paper-card big">
+    <h1 class="title">PAPER<br><span>AMONG US</span></h1>
+    <p class="sub">Funsion Mansion · a folded-paper prototype</p>
+    <button class="paper-btn wide" id="btnPlay">PLAY</button>
+    <button class="paper-btn wide" id="btnHowto">HOW TO PLAY</button>
+    <button class="paper-btn wide" id="btnScores">HIGH SCORES</button>
+    <p class="tiny-note">WASD / Arrows to move · E use · Q kill · R report · drag on touch</p>
+  </div>
+</div>
+
+<!-- ============ LOBBY ============ -->
+<div id="lobby" class="screen hidden">
+  <div class="paper-card wide-card">
+    <h2>LOBBY — <span class="ink">FUNSION</span></h2>
+    <div class="lobby-grid">
+      <div class="settings">
+        <label>Your name <input id="setName" maxlength="9" value="YOU"></label>
+        <label>Your role
+          <select id="setRole">
+            <option value="random">Random</option>
+            <option value="Crewmate">Crewmate</option>
+            <option value="Impostor">Impostor</option>
+            <option value="Swapper">Swapper (Imp)</option>
+            <option value="Hacker">Hacker (Imp)</option>
+            <option value="Traitor">Traitor (Neutral)</option>
+            <option value="Security">Security (Crew)</option>
+            <option value="Spy">Spy (Crew)</option>
+          </select>
+        </label>
+        <label>Map <select id="setMap"><option>Funsion</option></select></label>
+        <label>Players <input type="range" id="setPlayers" min="5" max="12" value="9"><b id="vPlayers">9</b></label>
+        <label>Impostors <input type="range" id="setImp" min="1" max="3" value="2"><b id="vImp">2</b></label>
+        <label>Kill cooldown <input type="range" id="setKill" min="5" max="45" value="20"><b id="vKill">20s</b></label>
+        <label>Role cooldown <input type="range" id="setRole2" min="5" max="60" value="25"><b id="vRole2">25s</b></label>
+        <label>Role uses <input type="range" id="setUses" min="1" max="5" value="2"><b id="vUses">2</b></label>
+        <label>Tasks each <input type="range" id="setTasks" min="2" max="8" value="4"><b id="vTasks">4</b></label>
+        <label>Player speed <input type="range" id="setSpeed" min="80" max="260" value="165"><b id="vSpeed">165</b></label>
+        <label>Emergency meetings <input type="range" id="setMeet" min="0" max="4" value="1"><b id="vMeet">1</b></label>
+        <label>Sabotage cooldown <input type="range" id="setSab" min="5" max="45" value="20"><b id="vSab">20s</b></label>
+      </div>
+      <div class="roster">
+        <h3>CREW SHEET</h3>
+        <div id="rosterList"></div>
+      </div>
+    </div>
+    <div class="row">
+      <button class="paper-btn" id="btnBackMenu">BACK</button>
+      <button class="paper-btn accent" id="btnStart">START GAME</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ROLE REVEAL ============ -->
+<div id="reveal" class="screen hidden">
+  <div id="revealInner">
+    <div id="revealTeam">CREWMATE</div>
+    <div id="revealRole">Crewmate</div>
+    <div id="revealDesc"></div>
+    <div id="revealCrew"></div>
+    <div id="revealHint">tap / press any key to begin</div>
+  </div>
+</div>
+
+<!-- ============ SPAWN SELECT ============ -->
+<div id="spawn" class="screen hidden">
+  <div class="paper-card wide-card">
+    <h2>CHOOSE YOUR ENTRANCE</h2>
+    <p class="sub">Where do you walk into the Funsion mansion?</p>
+    <div id="spawnGrid">
+      <button class="spawn-opt" data-r="front">
+        <span class="sicon">🚪</span>
+        <b>FRONT DOORS</b>
+        <i>South-west wing · near Living Room &amp; Reactor</i>
+        <em id="spawnFrontCount">0 others here</em>
+      </button>
+      <button class="spawn-opt" data-r="back">
+        <span class="sicon">🚪</span>
+        <b>BACK DOORS</b>
+        <i>North-east wing · near Kitchen &amp; Electrical</i>
+        <em id="spawnBackCount">0 others here</em>
+      </button>
+    </div>
+    <p class="tiny-note">Everyone else picks an entrance too. After meetings, everyone returns to the Living Room.</p>
+  </div>
+</div>
+
+<!-- ============ GENERIC PANEL (admin/cams/vitals/sabotage menu/ability) ============ -->
+<div id="panel" class="screen hidden">
+  <div class="paper-card" id="panelCard">
+    <h2 id="panelTitle">PANEL</h2>
+    <div id="panelBody"></div>
+    <button class="paper-btn" id="panelClose">CLOSE</button>
+  </div>
+</div>
+
+<!-- ============ MEETING ============ -->
+<div id="meeting" class="screen hidden">
+  <div class="paper-card wide-card">
+    <h2 id="meetTitle">EMERGENCY MEETING</h2>
+    <div class="meet-grid">
+      <div id="voteList"></div>
+      <div class="chatcol">
+        <div id="chatLog"></div>
+        <div id="chatChoices"></div>
+      </div>
+    </div>
+    <div class="row"><b id="meetTimer">30</b><span id="meetHint">Pick a message, then vote.</span></div>
+  </div>
+</div>
+
+<!-- ============ PAUSE / GAME OVER / SCORES ============ -->
+<div id="pause" class="screen hidden">
+  <div class="paper-card">
+    <h2>PAUSED</h2>
+    <button class="paper-btn wide" id="btnResume">RESUME</button>
+    <button class="paper-btn wide" id="btnQuit">QUIT TO LOBBY</button>
+  </div>
+</div>
+
+<div id="over" class="screen hidden">
+  <div class="paper-card big">
+    <h1 id="overTitle">CREWMATES WIN</h1>
+    <p id="overSub"></p>
+    <div id="overScore"></div>
+    <button class="paper-btn wide accent" id="btnAgain">PLAY AGAIN (R)</button>
+    <button class="paper-btn wide" id="btnLobby">BACK TO LOBBY</button>
+  </div>
+</div>
+
+<div id="scores" class="screen hidden">
+  <div class="paper-card">
+    <h2>HIGH SCORES</h2>
+    <div id="scoreTable"></div>
+    <button class="paper-btn wide" id="btnScoresBack">BACK</button>
+  </div>
+</div>
+
+<div id="howto" class="screen hidden">
+  <div class="paper-card wide-card">
+    <h2>HOW TO PLAY</h2>
+    <div class="howto-body">
+      <p><b>Crew:</b> finish your tasks (yellow markers) or vote out every impostor.</p>
+      <p><b>Impostor:</b> kill crew, use vents, sabotage. Win when impostors ≥ crew.</p>
+      <p><b>Traitor (neutral):</b> finish tasks OR get enough kills.</p>
+      <p><b>When you die</b> your team decides your ghost:
+         <b style="color:#8c62c4">Wraith</b> (impostor) haunts a crewmate to kill them unless a meeting is called ·
+         <b style="color:#5fc9cf">Spirit</b> (crewmate) keeps doing tasks and fixing sabotages ·
+         <b>Ghost</b> (neutral) has no powers.</p>
+      <p><b>Controls:</b> WASD/Arrows or touch-drag anywhere on the left of the screen. <b>E</b> use/task, <b>Q</b> kill, <b>R</b> report, <b>F</b> enter/exit vent, <b>C</b> ability, <b>X</b> sabotage, <b>Esc</b> pause.</p>
+      <p><b>Vents:</b> impostors press F on a hatch to drop in. Inside, glowing arrows point at every linked vent — push that direction (or tap the arrow) to travel, F to climb out. Anyone standing in the room <i>will see you vent</i>.</p>
+      <p><b>Darkness:</b> you only see your own room and the corridors leading out of it. Other rooms are dark and you can't see who's in them.</p>
+      <p><b>Systems:</b> Admin table (Admin's Office), Cameras (Security), Vitals (Medbay), Emergency button (Living Room).</p>
+      <p><b>Start:</b> after the role reveal you choose to enter through the <b>Front Doors</b> or the <b>Back Doors</b> — they open onto opposite wings of the mansion.</p>
+      <p><b>Score:</b> +120 task, +200 kill, +150 correct vote, +80 report, +1000 win.</p>
+    </div>
+    <button class="paper-btn wide" id="btnHowBack">BACK</button>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
